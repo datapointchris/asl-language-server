@@ -1,0 +1,30 @@
+{
+  "StartAt": "Fan",
+  "States": {
+    "Fan": {
+      "Type": "Parallel",
+      "Branches": [
+        %{ for i, region in regions ~}
+        {
+          "StartAt": "Run-${region}",
+          "States": {
+            "Run-${region}": { "Type": "Task", "Resource": "${worker}", "End": true }
+          }
+        }${i < length(regions) - 1 ? "," : ""}
+        %{ endfor ~}
+      ],
+      "Next": "Decide"
+    },
+    "Decide": {
+      "Type": "Choice",
+      "Choices": [{ "Variable": "$.ok", "BooleanEquals": true, "Next": "Done" }],
+      %{ if is_strict ~}
+      "Default": "Fail"
+      %{ else ~}
+      "Default": "Done"
+      %{ endif ~}
+    },
+    "Fail": { "Type": "Fail", "Error": "${undefined_error_name}" },
+    "Done": { "Type": "Succeed" }
+  }
+}

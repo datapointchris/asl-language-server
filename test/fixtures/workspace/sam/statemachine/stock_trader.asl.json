@@ -1,0 +1,16 @@
+{
+  "StartAt": "Check Stock Value",
+  "States": {
+    "Check Stock Value": {
+      "Type": "Task",
+      "Resource": "${StockCheckerFunctionArn}",
+      "Next": "Record"
+    },
+    "Record": {
+      "Type": "Task",
+      "Resource": "arn:${AWS::Partition}:states:::dynamodb:putItem",
+      "Parameters": { "TableName": "${DDBTable}", "Item": { "Id": { "S.$": "$.id" } } },
+      "End": true
+    }
+  }
+}

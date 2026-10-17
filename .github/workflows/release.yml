@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# Scoped per job rather than here: validate only reads, and it is the job that
+# runs the most third-party code.
+permissions:
+  contents: read
+
+# Two pushes to main inside one run's window would otherwise race to cut the
+# same version. Never cancel-in-progress: a canceled release can leave a tag
+# with no release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+
+  release:
+    needs: validate
+    uses: datapointchris/reusable-workflows/.github/workflows/go-semantic-release.yml@v1
+    permissions:
+      contents: write
+    with:
+      # Keeps this on 0.x. Without it go-semantic-release forces a major bump on
+      # any change while the major is 0, so the next `fix:` would ship 1.0.0.
+      allow-initial-development-versions: true
+
+  build:
+    needs: release
+    if: needs.release.outputs.version != ''
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: v${{ needs.release.outputs.version }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # package.json holds 0.0.0 in git. This sets the real version in the
+      # tag-checked-out working tree, where the build stamps it into --version,
+      # and is never committed back.
+      - run: npm version --no-git-tag-version "$VERSION"
+
+      - run: npm run build
+
+      # One file for every platform: the bundle carries its dependencies and
+      # runs on whatever Node is on PATH.
+      - name: package
+        run: |
+          mkdir -p release
+          cp dist/asl-language-server.cjs "release/asl-language-server-${VERSION}.cjs"
+          (cd release && sha256sum "asl-language-server-${VERSION}.cjs" > "asl-language-server-${VERSION}.cjs.sha256")
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          tag_name: v${{ needs.release.outputs.version }}
+          files: release/*

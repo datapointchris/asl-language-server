@@ -1,0 +1,23 @@
+{
+  "Comment": "Orders for ${replace(queue-url, "https://", "")}",
+  "StartAt": "Process",
+  "States": {
+    "Process": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${process_fn_arn}",
+        "Payload.$": "$"
+      },
+      "TimeoutSeconds": ${timeout},
+      "Retry": [{ "ErrorEquals": ["States.ALL"], "MaxAttempts": ${retry.max}, "IntervalSeconds": ${retry.interval} }],
+      "Next": "Notify"
+    },
+    "Notify": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage",
+      "Parameters": { "QueueUrl": "${queue_url}", "MessageBody.$": "$" },
+      "Next": "Missing"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List the tasks
+    silent: true
+    cmds:
+      - task --list
+
+  setup:
+    desc: Install dependencies from the lockfile
+    cmds:
+      - npm ci
+
+  build:
+    desc: Bundle the server into dist/asl-language-server.cjs
+    cmds:
+      - npm run build
+
+  install:
+    desc: Build and put this checkout's server on PATH ahead of the release
+    deps: [build]
+    cmds:
+      - install -m 755 dist/asl-language-server.cjs ~/.local/bin/asl-language-server
+
+  test:
+    desc: Run the test suite
+    cmds:
+      - npm test
+
+  typecheck:
+    desc: Type-check without emitting
+    cmds:
+      - npm run typecheck
+
+  lint:
+    desc: ESLint, the prettier check and the type-check, writing nothing
+    cmds:
+      - npm run lint
+      - npm run typecheck
+
+  format:
+    desc: Apply prettier and ESLint's autofixes
+    cmds:
+      - npx prettier --write .
+      - npm run lint:fix

@@ -1,0 +1,16 @@
+QueryLanguage: JSONata
+StartAt: Lookup
+States:
+  Lookup:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    Arguments:
+      FunctionName: ${lookup_fn}
+      Payload: '{% $states.input %}'
+    Assign:
+      total: '{% $states.result.Payload.total %}'
+    Next: Report
+  Report:
+    Type: Pass
+    Output: '{% $total %}'
+    End: true
