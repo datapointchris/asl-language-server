@@ -1,4 +1,4 @@
-# forge-toolchain: 49
+# forge-toolchain: 52
 name: CI
 
 on:
@@ -285,7 +285,7 @@ jobs:
             vue-eslint
             vue-prettier
             vue-typecheck
-            actionlint
+            jactionlint
           )
           # Every hook runs whatever the one before it found, so one push
           # reports every failing hook rather than the first.
