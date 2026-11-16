@@ -17,7 +17,8 @@ It handles files named `*.asl.json`, `*.asl.yaml` and `*.asl.yml`, and each of t
 
 ## Starting from scratch
 
-It is one JavaScript file that runs on Node 20 or later.
+It is one JavaScript file run by Node. The `engines.node` field in [`package.json`](package.json)
+holds the oldest Node version it supports.
 
 ```bash
 # 1. Download the newest release and the checksum beside it
