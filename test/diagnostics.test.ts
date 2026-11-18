@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { ClientCapabilities, getLanguageService, getYamlLanguageService } from 'amazon-states-language-service'
+import { MESSAGES } from 'amazon-states-language-service/out/constants/diagnosticStrings'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { expect, test } from 'vitest'
 import { diagnose } from '../src/diagnostics.ts'
@@ -25,8 +26,8 @@ async function diagnosticsFor(relative: string, edit: (text: string) => string =
 
 test('a templatefile() definition reports what Step Functions and Terraform would reject, and nothing its template syntax caused', async () => {
   expect(await diagnosticsFor('statemachines/orders.asl.json.tftpl')).toEqual([
-    '20: The value of "Next" property must be the name of an existing state.',
-    '4: No terminal state. The state machine must have at least one terminal state (a state in which the "End" property is set to true).',
+    `20: ${MESSAGES.INVALID_NEXT}`,
+    `4: ${MESSAGES.NO_TERMINAL_STATE}`,
     '19: "queue_url" is not passed by templatefile() at infra/main.tf:9.',
   ])
 })
@@ -47,7 +48,7 @@ test('a SAM definition is checked against the DefinitionSubstitutions of the tem
 test('a YAML definition with JSONata is masked and validated the same way', async () => {
   expect(await diagnosticsFor('statemachines/jsonata.asl.yaml')).toEqual([])
   expect(await diagnosticsFor('statemachines/jsonata.asl.yaml', (text) => text.replace('Next: Report', 'Next: Nowhere'))).toEqual([
-    '12: The value of "Next" property must be the name of an existing state.',
-    '13: The state cannot be reached. It must be referenced by at least one other state.',
+    `12: ${MESSAGES.INVALID_NEXT}`,
+    `13: ${MESSAGES.UNREACHABLE_STATE}`,
   ])
 })
