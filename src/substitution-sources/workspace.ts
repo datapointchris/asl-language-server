@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { samSuppliers } from './sam.ts'
 import type { Supplier } from './supplier.ts'
-import { terraformSuppliers } from './terraform.ts'
+import { type TemplatefileCall, templatefileCalls, terraformSuppliers } from './terraform.ts'
 
 const SKIPPED_DIRECTORIES = new Set([
   '.git',
@@ -30,10 +30,13 @@ interface Listing {
   files: string[]
 }
 
+// The parse is kept beside the text under the same mtime and size, so a lookup re-tokenizes
+// only a file that changed.
 interface ParsedFile {
   mtimeMs: number
   size: number
   text: string
+  calls: TemplatefileCall[]
 }
 
 export class SupplierIndex {
@@ -52,11 +55,11 @@ export class SupplierIndex {
   suppliersFor(documentPath: string, root: string): Supplier[] {
     const suppliers: Supplier[] = []
     for (const file of this.candidateFiles(root)) {
-      const text = this.read(file)
-      if (text === undefined) continue
+      const parsed = this.read(file)
+      if (parsed === undefined) continue
       if (file.endsWith('.tf')) {
-        if (text.includes('templatefile')) suppliers.push(...terraformSuppliers(text, file, documentPath))
-      } else suppliers.push(...samSuppliers(text, file, documentPath))
+        if (parsed.calls.length > 0) suppliers.push(...terraformSuppliers(parsed.calls, parsed.text, file, documentPath))
+      } else suppliers.push(...samSuppliers(parsed.text, file, documentPath))
     }
     return suppliers.some((s) => s.matchedBy === 'path') ? suppliers.filter((s) => s.matchedBy === 'path') : suppliers
   }
@@ -89,7 +92,7 @@ export class SupplierIndex {
     return files
   }
 
-  private read(file: string): string | undefined {
+  private read(file: string): ParsedFile | undefined {
     let stat: fs.Stats
     try {
       stat = fs.statSync(file)
@@ -97,9 +100,11 @@ export class SupplierIndex {
       return undefined
     }
     const cached = this.files.get(file)
-    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) return cached.text
+    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) return cached
     const text = fs.readFileSync(file, 'utf8')
-    this.files.set(file, { mtimeMs: stat.mtimeMs, size: stat.size, text })
-    return text
+    const calls = file.endsWith('.tf') && text.includes('templatefile') ? templatefileCalls(text) : []
+    const parsed = { mtimeMs: stat.mtimeMs, size: stat.size, text, calls }
+    this.files.set(file, parsed)
+    return parsed
   }
 }

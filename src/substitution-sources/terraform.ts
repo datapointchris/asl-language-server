@@ -113,25 +113,26 @@ export function pathPattern(pathString: string, callerDirectory: string): RegExp
   return new RegExp(`^${escaped}$`)
 }
 
-export function terraformSuppliers(hcl: string, callerPath: string, documentPath: string): Supplier[] {
+export function terraformSuppliers(calls: TemplatefileCall[], hcl: string, callerPath: string, documentPath: string): Supplier[] {
   const callerDirectory = path.dirname(callerPath)
-  const lineStarts = lineOffsets(hcl)
+  let lineStarts: number[] | undefined
   const suppliers: Supplier[] = []
-  for (const call of templatefileCalls(hcl)) {
+  for (const call of calls) {
     const exact = call.pathString !== undefined && pathPattern(call.pathString, callerDirectory).test(documentPath)
     const byName = call.pathString === undefined && call.pathExpression.includes(path.basename(documentPath))
     if (!exact && !byName) continue
+    const starts = (lineStarts ??= lineOffsets(hcl))
     const variables = call.variables?.map((entry): SuppliedVariable => ({
       name: entry.name,
       value: entry.value,
       file: callerPath,
-      position: positionAt(lineStarts, entry.start),
-      endPosition: positionAt(lineStarts, entry.end),
+      position: positionAt(starts, entry.start),
+      endPosition: positionAt(starts, entry.end),
     }))
     suppliers.push({
       kind: 'terraform',
       file: callerPath,
-      position: positionAt(lineStarts, call.start),
+      position: positionAt(starts, call.start),
       variables,
       variablesExpression: call.variablesExpression,
       matchedBy: exact ? 'path' : 'filename',

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { terraformSuppliers } from '../src/substitution-sources/terraform.ts'
+import { templatefileCalls, terraformSuppliers } from '../src/substitution-sources/terraform.ts'
 
 test('templatefile() calls are matched by resolved path, including a for_each over interpolated file names', () => {
   const hcl = `
@@ -20,7 +20,7 @@ locals {
   indirect = templatefile(local.template_path, local.vars)
 }
 `
-  const suppliers = terraformSuppliers(hcl, '/repo/infra/main.tf', '/repo/infra/sfn/orders.asl.json')
+  const suppliers = terraformSuppliers(templatefileCalls(hcl), hcl, '/repo/infra/main.tf', '/repo/infra/sfn/orders.asl.json')
 
   expect(suppliers.map((s) => [s.matchedBy, s.variables?.map((v) => v.name)])).toEqual([['path', ['queue-url', 'retry', 'names']]])
   expect(suppliers[0].variables?.[1].value).toBe('{ max = 3, interval = 2 }')
