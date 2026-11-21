@@ -25,7 +25,9 @@ const redirectYamlLanguageServerImports: Plugin = {
 }
 
 await build({
-  entryPoints: ['src/server.ts'],
+  // The entry answers --version and --help itself, and the server it imports on a transport flag
+  // stays in this one file, behind a lazy initializer.
+  entryPoints: ['src/command-line.ts'],
   outfile: OUTFILE,
   bundle: true,
   platform: 'node',

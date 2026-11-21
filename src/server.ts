@@ -26,33 +26,7 @@ import type { Supplier } from './substitution-sources/supplier.ts'
 import { SupplierIndex } from './substitution-sources/workspace.ts'
 import type { Reference } from './template-syntax/hcl.ts'
 import { overlapsSpan, type Span } from './template-syntax/scan.ts'
-
-declare const ASL_LANGUAGE_SERVER_VERSION: string
-const VERSION = typeof ASL_LANGUAGE_SERVER_VERSION === 'string' ? ASL_LANGUAGE_SERVER_VERSION : 'dev'
-
-const USAGE = `asl-language-server ${VERSION}
-Language server for Amazon States Language: *.asl.json, *.asl.yaml and *.asl.yml,
-each also as a Terraform template ending in .tftpl.
-
-Usage: asl-language-server --stdio
-
-Reads the Terraform templatefile() calls and SAM DefinitionSubstitutions under the
-workspace root, so \${...} and %{...} in a definition are checked against what fills them.
-`
-
-const TRANSPORTS = ['--stdio', '--node-ipc', '--socket', '--pipe']
-if (process.argv.includes('--version')) {
-  process.stdout.write(`${VERSION}\n`)
-  process.exit(0)
-}
-if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  process.stdout.write(USAGE)
-  process.exit(0)
-}
-if (!process.argv.slice(2).some((arg) => TRANSPORTS.some((flag) => arg.startsWith(flag)))) {
-  process.stderr.write(`${USAGE}\nasl-language-server: no transport given; an editor starts it with --stdio\n`)
-  process.exit(2)
-}
+import { VERSION } from './version.ts'
 
 const TOKEN_TYPES = ['macro', 'keyword', 'variable']
 const VALIDATION_DELAY_MS = 200

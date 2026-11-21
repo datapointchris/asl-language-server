@@ -40,6 +40,10 @@ or Map processor may reuse an outer name, and `test/state-graph.test.ts` pins th
   hides its requires, so they resolve to the identical `lib/esm/` files. Its `require('prettier')`
   resolves to `prettier/standalone`, which is all its YAML formatter uses, and that alone took the
   bundle from 14 MB to under 4 MB.
+- **The bundle's entry is `src/command-line.ts`, and it imports nothing heavy.** It answers
+  `--version` and `--help` and refuses a start with no transport, then imports `server.ts`. esbuild
+  keeps that import inside the one file behind a lazy initializer, so those three paths skip
+  initializing the language libraries. A static import of a library added to the entry undoes that.
 - **Two prettiers are installed on purpose.** yaml-language-server needs its own 2.0.5, nested
   under it. The root prettier 3 is the repo's formatter. A dev dependency on `prettier` with no
   version range resolves to the hoisted 2.0.5 and breaks `eslint-plugin-prettier`.
