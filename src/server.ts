@@ -19,7 +19,7 @@ import {
   TextDocumentSyncKind,
 } from 'vscode-languageserver/node'
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import { describeSupplier, diagnose, location } from './diagnostics.ts'
+import { diagnose, supplierHeading } from './diagnostics.ts'
 import { analyze, type DocumentAnalysis } from './document-analysis.ts'
 import { type AstNode, occurrences, stateAt, writtenName } from './state-graph.ts'
 import type { Supplier } from './substitution-sources/supplier.ts'
@@ -206,7 +206,7 @@ connection.onCompletion(async ({ textDocument, position }) => {
       items.set(variable.name, {
         label: variable.name,
         kind: CompletionItemKind.Variable,
-        detail: `${describeSupplier(supplier)} at ${location(supplier, root)}`,
+        detail: supplierHeading(supplier, root),
         documentation: { kind: MarkupKind.Markdown, value: codeBlock(supplier, `${variable.name} = ${variable.value}`) },
         textEdit: { range: replace, newText: variable.name },
         data: TEMPLATE_COMPLETION,
@@ -251,7 +251,7 @@ connection.onHover(async ({ textDocument, position }): Promise<Hover | null> => 
     const { list, root } = suppliersOf(document)
     const sections = list.flatMap((supplier) => {
       const variable = supplier.variables?.find((v) => v.name === reference.name)
-      const heading = `${describeSupplier(supplier)} at ${location(supplier, root)}`
+      const heading = supplierHeading(supplier, root)
       if (variable) return [`${heading}\n${codeBlock(supplier, `${variable.name} = ${variable.value}`)}`]
       if (supplier.variables === undefined)
         return [`${heading} passes \`${supplier.variablesExpression}\`, whose keys are not readable here`]

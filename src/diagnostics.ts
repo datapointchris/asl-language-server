@@ -93,7 +93,7 @@ export function templateDiagnostics(document: TextDocument, template: ScannedTem
       if (bound) continue
       const missing = known.filter((supplier) => !supplier.variables?.some((v) => v.name === reference.name))
       if (missing.length === 0) continue
-      const where = missing.map((supplier) => `${describeSupplier(supplier)} at ${location(supplier, root)}`).join(', ')
+      const where = missing.map((supplier) => supplierHeading(supplier, root)).join(', ')
       const errors = missing.some((supplier) => supplier.unknownIs === 'error')
       diagnostics.push({
         range: range(reference.start, reference.end),
@@ -108,10 +108,8 @@ export function templateDiagnostics(document: TextDocument, template: ScannedTem
   return diagnostics
 }
 
-export function describeSupplier(supplier: Supplier): string {
-  return supplier.kind === 'terraform' ? 'templatefile()' : supplier.variablesExpression
-}
-
-export function location(supplier: Supplier, root: string): string {
-  return `${path.relative(root, supplier.file)}:${supplier.position.line + 1}`
+/** Names a supplier and where it sits, as `<call or expression> at <file>:<line>`, for every message and hover that cites one. */
+export function supplierHeading(supplier: Supplier, root: string): string {
+  const described = supplier.kind === 'terraform' ? 'templatefile()' : supplier.variablesExpression
+  return `${described} at ${path.relative(root, supplier.file)}:${supplier.position.line + 1}`
 }
