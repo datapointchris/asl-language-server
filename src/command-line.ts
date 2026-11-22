@@ -5,13 +5,14 @@
 import { VERSION } from './version.ts'
 
 const USAGE = `asl-language-server ${VERSION}
-Language server for Amazon States Language: *.asl.json, *.asl.yaml and *.asl.yml,
-each also as a Terraform template ending in .tftpl.
+Language server for Amazon States Language: *.asl.json, *.asl.yaml and
+*.asl.yml, each also as a Terraform template ending in .tftpl.
 
 Usage: asl-language-server --stdio
 
-Reads the Terraform templatefile() calls and SAM DefinitionSubstitutions under the
-workspace root, so \${...} and %{...} in a definition are checked against what fills them.
+Reads the Terraform templatefile() calls and SAM DefinitionSubstitutions
+under the workspace root, so \${...} and %{...} in a definition are checked
+against what fills them.
 `
 
 const TRANSPORTS = ['--stdio', '--node-ipc', '--socket', '--pipe']
@@ -43,7 +44,8 @@ function refusal(args: string[]): string {
     const near = TRANSPORTS.filter((flag) => (refused.length >= 3 && flag.startsWith(refused)) || editDistance(refused, flag) <= 2)
     if (near.length > 0) lines.push(`Did you mean ${near.join(' or ')}?`)
   }
-  lines.push(`It starts on one transport: ${TRANSPORTS.join(', ')}. An editor starts it with --stdio.`)
+  lines.push(`It starts on one transport: ${TRANSPORTS.join(', ')}.`)
+  lines.push('An editor starts it with --stdio.')
   lines.push("Run 'asl-language-server --help' for usage.")
   return `${lines.join('\n')}\n`
 }
